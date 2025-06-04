@@ -20,8 +20,7 @@
     "test:by-id": "npx playwright test --grep",
     "test:by-page": "npx playwright test --grep",
     "test:by-feature": "npx playwright test --grep",
-    "allureReport": "allure serve",
-    "lighthouse": "node tests/lighthouse/Lighthouse.js"
+    "allureReport": "allure serve"
   },
   "repository": {
     "type": "git",
@@ -39,9 +38,7 @@
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.29.1",
     "exceljs": "^4.4.0",
-    "lighthouse": "^9.6.8",
     "ortoni-report": "^2.0.3",
-    "pdfjs-dist-es5": "^2.13.216",
     "pg": "^8.13.0",
     "typescript": "^5.6.2",
     "winston": "^3.14.2"
