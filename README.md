@@ -21,7 +21,6 @@
             <li><a href="#usage">Usage</a></li>
             <li><a href="#reports">Reports</a></li>
             <li><a href="#sonarqube">SonarQube</a></li>
-            <li><a href="#docker">Docker</a></li>
             <li><a href="#lighthouse">Lighthouse</a></li>
           </ol>
         </h5>    
@@ -59,7 +58,6 @@ Bonus:
 - Converts HTML Reports to Zip format which can shared across.
 - Extracts Text from PDF files.
 - Shows Page performance using Lighthouse Library.
-- Docker Image is created with node:20.5.1-bookworm-slim
 - Configured GitHub Actions to get triggered on pull/push actions
 - Slack Notifications with html-report url once Github Actions is completed.
 
@@ -288,22 +286,6 @@ sonar.password=password
 - Now navigate to `http://localhost:9000/` and click on your project key displayed and go to Issues section, you can find all the suggestions and issues here. You can fix the issues ans rerun `sonar-scanner` command once again.
 - <b>SonarQube Report</b>
   ![SonarQube Report Screenshot][sonar-report-screenshot]
-
-  ## Docker
-  For running the tests on Docker container we have to first build a image from Dockerfile and then run the image to spawn container on which the test scripts will run.
-- For building image from Docker run below command, where path to Dockerfile must be provided after -f tag and name of the image must be provided after -t tag.
-```JS
-docker build . -f Dockerfile -t playtest
-```
-- Once the image is generated we can run the image to spawn container and run scrips using below command. In Below Command "playContainer" is name of the container created using "playtest" image and "-e npm_config_ENV" corresponds to the environment you are providing e.g. dev/qa etc.
-```JS
-docker run -e npm_config_ENV=qa --name playContainer playtest
-```
-- If you want to run a different test or provide custom command, Go to Dockerfile and edit the last line which is CMD section. The below sample runs test cases serially on QA environment.
-Once you have edited the CMD section we have to follow Step 1 to build a new image and ten run the Container from that image.
-```JS
-CMD npm run test:serial --ENV="qa"
-```
 
 ## Lighthouse
 Lighthouse is an open-source, automated tool for improving the quality of web pages. You can run it against any web page, public or requiring authentication. It has audits for performance, accessibility, progressive web apps, SEO and more.
