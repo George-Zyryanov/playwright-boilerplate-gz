@@ -1,0 +1,327 @@
+# Name of the GitHub Actions workflow
+name: Playwright Github Actions
+
+# Define when to trigger this workflow
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Define the jobs to run in this workflow
+jobs:
+  # Define a job named 'build'
+  build:
+    # Specify the operating system for this job
+    runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK_URL: ${{secrets.SLACK_WEBHOOK_URL}}
+    outputs:
+      build_status: ${{ job.status }}
+      build_start_time: ${{ steps.build_timing.outputs.start_time }}
+      build_end_time: ${{ steps.build_timing_end.outputs.end_time }}
+      build_duration: ${{ steps.build_timing_end.outputs.duration_seconds }}
+
+    # Define the steps to execute in this job
+    steps:
+      # Step to record start time
+      - name: Record build timing
+        id: build_timing
+        run: |
+          echo "start_time=$(date +%s)" >> $GITHUB_OUTPUT
+          
+      # Step to checkout the source code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install node js v20
+      - name: Install node js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: 'npm'
+          
+      # Step to install Node.js dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Step to install Chrome browser for Playwright - no caching
+      - name: Install Chrome browser for Playwright
+        id: install_browser
+        run: |
+          # Start timing
+          INSTALL_START_TIME=$(date +%s)
+          
+          # Install Chrome with dependencies using the recommended approach
+          echo "Installing Chrome browser using Playwright's recommended approach"
+          npx playwright install chrome --with-deps
+          
+          # End timing and calculate duration
+          INSTALL_END_TIME=$(date +%s)
+          INSTALL_DURATION=$((INSTALL_END_TIME - INSTALL_START_TIME))
+          echo "install_duration=$INSTALL_DURATION" >> $GITHUB_OUTPUT
+          echo "Browser installation took $INSTALL_DURATION seconds"
+          
+          # Show the installed browser version for reference
+          if which google-chrome >/dev/null; then
+            echo "Installed Chrome version: $(google-chrome --version)"
+          fi
+
+      # Step to run tests with qa as environment variable similarly we can define qa|dev|qaApi|devApi
+      - name: Run tests
+        run: npm run test:single
+        env:
+          npm_config_ENV: "qa"
+
+      # Step to wait for the job to complete
+      - name: Wait for job completion
+        # Adjust the wait time as needed
+        run: sleep 10s
+        # This step should always run, even if previous steps fail
+        if: always()
+
+      # Check if HTML report exists
+      - name: Check if HTML report exists
+        run: |
+          if [ -d "html-report" ]; then
+            echo "HTML report exists."
+          else
+            echo "HTML report does not exist. Exiting..."
+            exit 1
+          fi
+        if: always()
+
+      # Step to zip html-report folder
+      - name: Zip HTML report
+        run: zip -r html-report.zip html-report
+        # This step should always run, even if previous steps fail
+        if: always()
+
+      # Step to upload artifact
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report
+          path: html-report.zip
+          if-no-files-found: error
+        if: always()
+
+      # Step to generate artifact link
+      - name: Generate artifact link
+        id: artifact_link
+        run: echo "artifact_url=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_OUTPUT
+        if: always()
+
+      # Record build end time and calculate duration
+      - name: Calculate build duration
+        id: build_timing_end
+        if: always()
+        run: |
+          END_TIME=$(date +%s)
+          START_TIME=${{ steps.build_timing.outputs.start_time }}
+          DURATION=$((END_TIME - START_TIME))
+          echo "end_time=$END_TIME" >> $GITHUB_OUTPUT
+          echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
+          echo "Build duration: $DURATION seconds"
+
+      # Send Slack notification with html-report url once the tests are completed
+      - name: Send Slack notification
+        uses: rtCamp/action-slack-notify@v2.2.1
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: "#playwright-test-reports"
+          SLACK_USERNAME: Playwright Test Bot
+          SLACK_ICON: https://playwright.dev/img/playwright-logo.svg
+          SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}
+          SLACK_TITLE: "Playwright Test Results: ${{ job.status }}"
+          SLACK_MESSAGE: |
+            :rocket: *Test Run #${{ github.run_number }} Completed*
+            
+            *Status:* ${{ job.status }}
+            *Commit:* ${{ github.sha }}
+            *Branch:* ${{ github.ref_name }}
+            
+            :page_facing_up: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Artifacts>
+            :chart_with_upwards_trend: <https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}|View Test History Dashboard>
+            :bar_chart: <https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/reports/${{ github.sha }}|View Latest Test Report>
+        if: always()
+
+  # Updated job for deploying to GitHub Pages with versioning
+  deploy:
+    needs: [build]
+    if: |
+      always() &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+      contents: write
+    
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          path: main-checkout
+
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-checkout
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: html-report
+          path: html-report.zip
+
+      - name: Extract HTML report
+        working-directory: gh-pages-checkout
+        run: |
+          echo "Listing downloaded artifacts:"
+          ls -la ../html-report.zip
+          mkdir -p temp-extract
+          
+          # Find and extract any zip files we have
+          echo "Looking for zip files to extract:"
+          find ../html-report.zip -type f -o -type d
+          
+          if [ -f "../html-report.zip" ]; then
+            echo "Found html-report.zip file"
+            unzip -o ../html-report.zip -d temp-extract
+          else
+            echo "No html-report.zip found, looking for any zip files"
+            find ../html-report.zip -name "*.zip" -type f -exec unzip -o {} -d temp-extract \;
+          fi
+          
+          echo "Temporary extraction contents:"
+          ls -la temp-extract || echo "temp-extract directory is empty or doesn't exist"
+          
+          # Create the html-report directory
+          mkdir -p html-report
+          
+          # Handle nested directory structures
+          if [ -d "temp-extract/html-report" ]; then
+            echo "Found nested html-report directory"
+            cp -r temp-extract/html-report/* html-report/ || echo "Failed to copy from temp-extract/html-report"
+          elif find temp-extract -name "index.html" | grep -q .; then
+            echo "Found index.html in a subdirectory"
+            INDEX_DIR=$(find temp-extract -name "index.html" | head -1 | xargs dirname)
+            echo "Copying from $INDEX_DIR to html-report/"
+            cp -r "$INDEX_DIR"/* html-report/ || echo "Failed to copy from $INDEX_DIR"
+          else
+            echo "No nested directory or index.html found, copying all contents"
+            cp -r temp-extract/* html-report/ || echo "Failed to copy from temp-extract"
+          fi
+          
+          echo "Final html-report contents:"
+          ls -la html-report || echo "html-report directory is empty or doesn't exist"
+          
+          # Create a fallback index.html if needed
+          if [ ! -f "html-report/index.html" ]; then
+            echo "No index.html found, creating a simple one"
+            echo "<html><body><h1>Playwright Test Report</h1><p>Run #${{ github.run_number }}</p></body></html>" > html-report/index.html
+          fi
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install jinja2
+
+      - name: Generate index page and prepare reports
+        working-directory: gh-pages-checkout
+        run: |
+          # Install dependencies
+          pip install jinja2
+          
+          # Ensure scripts directory exists in the checkout
+          mkdir -p .github/scripts
+          
+          # Copy the script from main-checkout to current working directory
+          cp ../main-checkout/.github/scripts/generate_reports.py .github/scripts/
+          
+          # Make the script executable
+          chmod +x .github/scripts/generate_reports.py
+          
+          # Get the actual build duration from the build job
+          BUILD_DURATION="${{ needs.build.outputs.build_duration }}"
+          if [[ -z "$BUILD_DURATION" || "$BUILD_DURATION" == "null" ]]; then
+            # Fallback to a default value if the actual duration is not available
+            BUILD_DURATION="180"
+            echo "No build duration available, using default: $BUILD_DURATION seconds"
+          else
+            echo "Using actual build duration: $BUILD_DURATION seconds"
+          fi
+          
+          # Run the script with environment variables
+          export GITHUB_SHA="${{ github.sha }}"
+          export COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          export GITHUB_RUN_NUMBER="${{ github.run_number }}"
+          export GITHUB_RUN_ID="${{ github.run_id }}"
+          export BUILD_STATUS="${{ needs.build.outputs.build_status }}"
+          export BUILD_DURATION="$BUILD_DURATION"
+          
+          python .github/scripts/generate_reports.py
+
+      # Verify directory structure before upload
+      - name: Verify directory structure
+        working-directory: gh-pages-checkout
+        run: |
+          echo "Current directory contents:"
+          ls -la
+          echo "Reports directory structure:"
+          ls -la reports/ || echo "No reports directory found"
+          echo "Reports.json content:"
+          cat reports.json || echo "No reports.json found"
+          if [ -d "reports" ]; then
+            echo "Number of report directories: $(ls -l reports | grep -c ^d)"
+            for dir in reports/*/; do
+              echo "Contents of $dir:"
+              find "$dir" -type f | sort
+              if [ -f "$dir/index.html" ]; then
+                echo "✓ index.html found in $dir"
+              else
+                echo "✗ NO index.html found in $dir"
+              fi
+            done
+          fi
+
+      - name: Verify existing reports
+        working-directory: gh-pages-checkout
+        run: |
+          echo "Current directory contents:"
+          ls -la
+          if [ -f "reports.json" ]; then
+            echo "Reports.json exists. Content:"
+            cat reports.json
+          else
+            echo "reports.json does not exist, will be created"
+          fi
+
+      - name: Commit and Push to gh-pages
+        working-directory: gh-pages-checkout
+        run: |
+          git config --global user.email "georgezyryanov@gmail.com"
+          git config --global user.name "George Zyryanov"
+          git add .
+          git commit -m "Update reports for run #${{ github.run_number }}" || echo "No changes to commit"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: gh-pages-checkout
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
