@@ -1,7 +1,8 @@
 import { PlaywrightTestConfig } from '@playwright/test';
 import { testConfig } from './testConfig';
+import 'dotenv/config'; // Make sure dotenv is at the top if you use it
 
-const ENV = process.env.npm_config_ENV;
+const ENV = process.env.TEST_ENV;
 
 if (!ENV || ![`qa`, `dev`, `qaApi`, `devApi`].includes(ENV)) {
   console.log(`Please provide a correct environment value after command like "--ENV=qa|dev|qaApi|devApi"`);
@@ -10,9 +11,9 @@ if (!ENV || ![`qa`, `dev`, `qaApi`, `devApi`].includes(ENV)) {
 
 // ReportPortal Configuration
 const RPconfig = {
-  apiKey: process.env.RP_API_KEY || 'YOUR_RP_API_KEY_PLACEHOLDER',
-  endpoint: process.env.RP_ENDPOINT || 'YOUR_RP_ENDPOINT_PLACEHOLDER',
-  project: process.env.RP_PROJECT_NAME || 'YOUR_RP_PROJECT_NAME_PLACEHOLDER',
+  apiKey: 'admin-key',
+  endpoint: 'http://localhost:8080/api/v1',
+  project: 'superadmin_personal', // Or the specific project name you want to use
   launch: process.env.RP_LAUNCH_NAME || 'Playwright Test Launch',
   attributes: [
     {
@@ -25,9 +26,9 @@ const RPconfig = {
     },
   ],
   description: 'Test execution from Playwright TypeScript framework',
-  // includeTestSteps: true, // Set to true if you use test.step() and want them reported as nested steps
-  // uploadVideo: true, // Already handled by Playwright's trace/video settings
-  // uploadTrace: true, // Already handled by Playwright's trace/video settings
+  // includeTestSteps: true,
+  // uploadVideo: true,
+  // uploadTrace: true,
 };
 
 const config: PlaywrightTestConfig = {
@@ -45,7 +46,7 @@ const config: PlaywrightTestConfig = {
   reporter: [
     ['html', { outputFolder: 'html-report', open: 'never' }],
     ['./lib/MetadataReporter.ts'],
-    ['@reportportal/agent-js-playwright', RPconfig]
+    // ['@reportportal/agent-js-playwright', RPconfig]
   ],
 
   projects: [
