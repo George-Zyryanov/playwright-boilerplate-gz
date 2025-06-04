@@ -10,17 +10,14 @@
     "test:serial": "npx playwright test --grep @Smoke --workers=1 --project=Chrome",
     "test:ui": "npx playwright test --grep @Smoke --ui",
     "test:api": "npx playwright test --grep @API --workers=1 --project=Chrome",
-    "test:db": "npx playwright test DB.test.ts --project=DB",
     "test:record": "npx playwright codegen",
-    "test:visual": "npx playwright test visualComparision.test.ts --project=Chrome",
     "test:p1": "npx playwright test --grep @P1 --project=Chrome",
     "test:p2": "npx playwright test --grep @P2 --project=Chrome",
     "test:p3": "npx playwright test --grep @P3 --project=Chrome",
     "test:p4": "npx playwright test --grep @P4 --project=Chrome",
     "test:by-id": "npx playwright test --grep",
     "test:by-page": "npx playwright test --grep",
-    "test:by-feature": "npx playwright test --grep",
-    "allureReport": "allure serve"
+    "test:by-feature": "npx playwright test --grep"
   },
   "repository": {
     "type": "git",
@@ -33,14 +30,12 @@
     "@types/crypto-js": "^4.2.2",
     "@typescript-eslint/eslint-plugin": "^8.3.0",
     "@typescript-eslint/parser": "^8.3.0",
-    "allure-playwright": "^3.0.1",
     "crypto-js": "^4.2.0",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.29.1",
-    "exceljs": "^4.4.0",
-    "ortoni-report": "^2.0.3",
-    "pg": "^8.13.0",
-    "typescript": "^5.6.2",
-    "winston": "^3.14.2"
+    "typescript": "^5.6.2"
+  },
+  "devDependencies": {
+    "@reportportal/agent-js-playwright": "^5.1.11"
   }
 }

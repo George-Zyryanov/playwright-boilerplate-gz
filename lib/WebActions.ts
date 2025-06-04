@@ -2,7 +2,6 @@ import fs from 'fs';
 import * as CryptoJS from 'crypto-js';
 import type { Page } from '@playwright/test';
 import { BrowserContext, expect } from '@playwright/test';
-import { Workbook } from 'exceljs';
 import { testConfig } from '../testConfig';
 
 export class WebActions {
@@ -36,22 +35,7 @@ export class WebActions {
         await this.page.$eval(locator, (element: HTMLElement) => element.click());
     }
 
-    async readDataFromExcel(fileName: string, sheetName: string, rowNum: number, cellNum: number): Promise<string> {
-        const workbook = new Workbook();
-        return workbook.xlsx.readFile(`./Downloads/${fileName}`).then(function () {
-            const sheet = workbook.getWorksheet(sheetName);
-            return sheet.getRow(rowNum).getCell(cellNum).toString();
-        });
-    }
-
     async readValuesFromTextFile(filePath: string): Promise<string> {
         return fs.readFileSync(`${filePath}`, `utf-8`);
-    }
-
-    async writeDataIntoTextFile(filePath: number | fs.PathLike, data: string | NodeJS.ArrayBufferView): Promise<void> {
-        fs.writeFile(filePath, data, (error) => {
-            if (error)
-                throw error;
-        });
     }
 }

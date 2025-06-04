@@ -1,6 +1,5 @@
 import { PlaywrightTestConfig } from '@playwright/test';
 import { testConfig } from './testConfig';
-import { OrtoniReportConfig } from 'ortoni-report';
 
 const ENV = process.env.npm_config_ENV;
 
@@ -9,16 +8,27 @@ if (!ENV || ![`qa`, `dev`, `qaApi`, `devApi`].includes(ENV)) {
   process.exit();
 }
 
-const reportConfig: OrtoniReportConfig = {
-  base64Image: true,
-  title: "Playwright Framework with Typescript",
-  showProject: true,
-  filename: "OrtoniHtmlReport",
-  authorName: "George Zyryanov",
-  preferredTheme: "dark",
-  folderPath: "html-report",
-  projectName: "Playwright Framework with Typescript",
-}
+// ReportPortal Configuration
+const RPconfig = {
+  apiKey: process.env.RP_API_KEY || 'YOUR_RP_API_KEY_PLACEHOLDER',
+  endpoint: process.env.RP_ENDPOINT || 'YOUR_RP_ENDPOINT_PLACEHOLDER',
+  project: process.env.RP_PROJECT_NAME || 'YOUR_RP_PROJECT_NAME_PLACEHOLDER',
+  launch: process.env.RP_LAUNCH_NAME || 'Playwright Test Launch',
+  attributes: [
+    {
+      key: 'agent',
+      value: 'playwright-typescript',
+    },
+    {
+      key: 'environment',
+      value: ENV, // Optional: Pass your test environment as an attribute
+    },
+  ],
+  description: 'Test execution from Playwright TypeScript framework',
+  // includeTestSteps: true, // Set to true if you use test.step() and want them reported as nested steps
+  // uploadVideo: true, // Already handled by Playwright's trace/video settings
+  // uploadTrace: true, // Already handled by Playwright's trace/video settings
+};
 
 const config: PlaywrightTestConfig = {
 
@@ -33,11 +43,9 @@ const config: PlaywrightTestConfig = {
 
   //Reporters
   reporter: [
-    [`./CustomReporterConfig.ts`], 
-    [`allure-playwright`], 
-    [`html`, { outputFolder: 'html-report', open: 'never' }],
-    ['ortoni-report', reportConfig],
-    ['./lib/MetadataReporter.ts']
+    ['html', { outputFolder: 'html-report', open: 'never' }],
+    ['./lib/MetadataReporter.ts'],
+    ['@reportportal/agent-js-playwright', RPconfig]
   ],
 
   projects: [
@@ -145,9 +153,6 @@ const config: PlaywrightTestConfig = {
           slowMo: 0
         }
       },
-    },
-    {
-      name: `DB`
     },
     {
       name: `API`,
