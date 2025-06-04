@@ -92,6 +92,38 @@ npm run allureReport
 - Test data: `testConfig.ts`
 - Environment variables: Set `npm_config_ENV` to "qa" or "dev"
 
+### Test Reporting
+
+#### ReportPortal Integration (Currently Disabled)
+
+This project is pre-configured to support integration with ReportPortal for advanced test reporting and analytics.
+
+To enable ReportPortal integration:
+
+1.  **Install the ReportPortal agent:**
+    ```sh
+    npm install --save-dev @reportportal/agent-js-playwright
+    ```
+2.  **Configure the reporter in `playwright.config.ts`:**
+    Uncomment the ReportPortal reporter line in the `reporter` array:
+    ```typescript
+    // Before:
+    // reporter: [
+    //   ['html', { outputFolder: 'html-report', open: 'never' }],
+    //   ['./lib/MetadataReporter.ts'],
+    //   // ['@reportportal/agent-js-playwright', RPconfig] 
+    // ],
+
+    // After:
+    reporter: [
+      ['html', { outputFolder: 'html-report', open: 'never' }],
+      ['./lib/MetadataReporter.ts'],
+      ['@reportportal/agent-js-playwright', RPconfig] // Uncommented
+    ],
+    ```
+3.  **Update `RPconfig` in `playwright.config.ts`:**
+    Ensure the `RPconfig` object in `playwright.config.ts` has the correct `apiKey`, `endpoint`, and `project` details for your ReportPortal instance.
+
 ## Project Structure
 
 ```
