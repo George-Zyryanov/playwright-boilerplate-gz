@@ -13,7 +13,6 @@
     "test:db": "npx playwright test DB.test.ts --project=DB",
     "test:record": "npx playwright codegen",
     "test:visual": "npx playwright test visualComparision.test.ts --project=Chrome",
-    "test:device": "npx playwright test Emulation.test.ts --project=Device",
     "test:p1": "npx playwright test --grep @P1 --project=Chrome",
     "test:p2": "npx playwright test --grep @P2 --project=Chrome",
     "test:p3": "npx playwright test --grep @P3 --project=Chrome",
@@ -22,8 +21,7 @@
     "test:by-page": "npx playwright test --grep",
     "test:by-feature": "npx playwright test --grep",
     "allureReport": "allure serve",
-    "lighthouse": "node tests/lighthouse/Lighthouse.js",
-    "test:accessibility": "npx playwright test Axe.test.ts --project=Chrome"
+    "lighthouse": "node tests/lighthouse/Lighthouse.js"
   },
   "repository": {
     "type": "git",
@@ -32,7 +30,6 @@
   "author": "George Zyryanov",
   "license": "MIT",
   "dependencies": {
-    "@axe-core/playwright": "^4.10.0",
     "@playwright/test": "^1.47.2",
     "@types/crypto-js": "^4.2.2",
     "@typescript-eslint/eslint-plugin": "^8.3.0",

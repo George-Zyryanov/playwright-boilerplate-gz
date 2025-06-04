@@ -8,7 +8,6 @@ import { MainPage } from '@pages/MainPage';
 import { ProductsPage} from '@pages/ProductsPage';
 import { SingleProductPage } from '@pages/SingleProductPage';
 import { WebActions } from '@lib/WebActions';
-import AxeBuilder from '@axe-core/playwright';
 
 const test = baseTest.extend<{
     webActions: WebActions;
@@ -20,7 +19,6 @@ const test = baseTest.extend<{
     productsPage: ProductsPage;
     mainPage: MainPage;
     singleProductPage: SingleProductPage;
-    makeAxeBuilder: AxeBuilder;
     testInfo: TestInfo;
 }>({
     webActions: async ({ page, context }, use) => {
@@ -49,12 +47,7 @@ const test = baseTest.extend<{
     },
     singleProductPage: async({page, context}, use) => {
         await use(new SingleProductPage(page, context));
-    },
-    // makeAxeBuilder: async ({ page }, use) => {
-    //     await use(new AxeBuilder({ page })
-    //         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    //         .exclude('#commonly-reused-element-with-known-issue'));
-    // }
+    }
 })
 
 export default test;

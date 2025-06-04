@@ -1,4 +1,4 @@
-import { PlaywrightTestConfig, devices } from '@playwright/test';
+import { PlaywrightTestConfig } from '@playwright/test';
 import { testConfig } from './testConfig';
 import { OrtoniReportConfig } from 'ortoni-report';
 
@@ -136,24 +136,6 @@ const config: PlaywrightTestConfig = {
         baseURL: testConfig[ENV],
         headless: true,
         viewport: { width: 1500, height: 730 },
-        ignoreHTTPSErrors: true,
-        acceptDownloads: true,
-        screenshot: `only-on-failure`,
-        video: `retain-on-failure`,
-        trace: `retain-on-failure`,
-        launchOptions: {
-          slowMo: 0
-        }
-      },
-    },
-    {
-      name: `Device`,
-      use: {
-        ...devices[`Pixel 4a (5G)`],
-        browserName: `chromium`,
-        channel: `chrome`,
-        baseURL: testConfig[ENV],
-        headless: true,
         ignoreHTTPSErrors: true,
         acceptDownloads: true,
         screenshot: `only-on-failure`,
